@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" height="48px" viewBox="0 -960 960 960" width="48px" fill="#e3e3e3">
+  <defs>
+    <mask id="calendar-mask">
+      <rect x="0" y="-960" width="960" height="960" fill="white" />
+      <!-- Cut out the area where the second asterisk overlaps the right border -->
+      <rect x="750" y="-570" width="120" height="430" fill="black" />
+    </mask>
+  </defs>
+  
+  <g transform="translate(-70, 0) ">
+
+  <path d="M180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Zm0-490h600v-130H180v130Zm0 0v-130 130Z" mask="url(#calendar-mask)"/>
+  </g>
+
+  <!-- Asterisk 1: Inside -->
+  <g transform="translate(330, -350) scale(0.50)">
+    <path d="M450-120v-288L247-205l-42-42 203-203H120v-60h289L205-714l42-42 203 203v-287h60v288l204-204 42 42-204 204h288v60H553l203 203-42 42-204-204v289h-60Z" transform="translate(-480, 480)"/>
+  </g>
+  
+  <!-- Asterisk 2: Overlapping edge -->
+  <g transform="translate(770, -350) scale(0.50)">
+    <path d="M450-120v-288L247-205l-42-42 203-203H120v-60h289L205-714l42-42 203 203v-287h60v288l204-204 42 42-204 204h288v60H553l203 203-42 42-204-204v289h-60Z" transform="translate(-480, 480)"/>
+  </g>
+</svg>

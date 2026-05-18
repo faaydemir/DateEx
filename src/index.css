@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&display=swap');
+@import "tailwindcss";
+
+/* ── Custom design tokens via Tailwind v4 theme ── */
+@theme {
+  --font-sans: 'League Spartan', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --color-brand-50: #f5f5f5;
+  --color-brand-100: #eeeeee;
+  --color-brand-300: #bbd5da;
+  --color-brand-500: #ea5455;
+  --color-brand-600: #ff0000;
+  --color-brand-900: #2d4059;
+  --color-active: #bbd5da;
+
+  --color-surface: #f5f5f5;
+  --color-card: #eeeeee;
+  --color-glass: rgba(223, 241, 241, 0.72);
+
+  --color-anchor: #0b5cad;
+  --color-cycle: #1f8a4c;
+  --color-relative: #c77700;
+  --color-current: #b21f73;
+}
+
+/* ── Base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f5f5f5;
+  color: #2d4059;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mono font utility */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bbd5da;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2d4059;
+}
+
+/* ── Custom animations ── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide {
+  animation: fadeSlideUp 0.25s ease;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease;
+}

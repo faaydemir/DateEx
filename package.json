@@ -1,0 +1,35 @@
+{
+  "name": "date-ex",
+  "version": "1.0.0",
+  "description": "DateEx is simple grammar to define date",
+  "type": "module",
+  "scripts": {
+    "build:grammar": "peggy --format es --output src/grammar/parser.js src/grammar/justdate.pegjs",
+    "prebuild": "npm run build:grammar",
+    "predev": "npm run build:grammar",
+    "dev": "vite",
+    "start": "vite",
+    "pretest": "npm run build:grammar",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.scripts.json --noEmit"
+  },
+  "dependencies": {
+    "luxon": "^3.7.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "@types/luxon": "^3.7.1",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "jest": "^30.4.2",
+    "peggy": "^4.2.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.1"
+  }
+}
