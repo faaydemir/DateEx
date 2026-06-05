@@ -1,7 +1,8 @@
 import type { FC } from 'react'
-import grammarFileUrl from '../grammar/justdate.pegjs?url'
 
-type ReferenceCategory = 'anchor' | 'current' | 'relative' | 'cycle' | 'continuous'
+const GRAMMAR_URL = 'https://github.com/faaydemir/DateEx/blob/main/src/grammar/justdate.pegjs'
+
+type ReferenceCategory = 'anchor' | 'current' | 'relative' | 'cycle' | 'span'
 
 interface ReferenceGroup {
   category: ReferenceCategory
@@ -71,12 +72,12 @@ const SYNTAX_REFERENCE: ReferenceGroup[] = [
     ],
   },
   {
-    category: 'continuous',
-    label: 'Continuous — time span',
-    definition: 'A continuous expression uses .. to describe one uninterrupted closed time window from a start to an end.',
+    category: 'span',
+    label: 'Span — time span',
+    definition: 'A span expression uses .. to describe one uninterrupted closed time window from a start to an end.',
     rows: [
-      { expr: 'Y2023..Y2026', meaning: 'The continuous span from 2023 through 2026' },
-      { expr: 'Y2023-M1..Y2023-M12', meaning: 'All of 2023 as a continuous period' },
+      { expr: 'Y2023..Y2026', meaning: 'The span span from 2023 through 2026' },
+      { expr: 'Y2023-M1..Y2023-M12', meaning: 'All of 2023 as a span period' },
       { expr: 'Y2023-M6..Y2026-M3', meaning: 'From June 2023 through March 2026' },
       { expr: 'Y2023-M1..Y2026-M12', meaning: 'From January 2023 through December 2026' },
     ],
@@ -88,7 +89,7 @@ const CATEGORY_COLORS: Record<ReferenceCategory, string> = {
   cycle: 'text-[#1f8a4c]',
   relative: 'text-[#c77700]',
   current: 'text-[#b21f73]',
-  continuous: 'text-[#6f45b7]',
+  span: 'text-[#6f45b7]',
 }
 
 interface Props {
@@ -102,7 +103,7 @@ export const SyntaxReference: FC<Props> = ({ onSelect }) => {
         <div className="flex items-center justify-between  w-full gap-3">
           <h2 id="syntax-title" className="text-lg font-bold text-[#2D4059] mb-1.5">Syntax</h2>
           <a
-            href={grammarFileUrl}
+            href={GRAMMAR_URL}
             target="_blank"
             rel="noreferrer"
             className="font-mono text-sm text-[#EA5455] underline decoration-[#EA5455]/30 underline-offset-4 transition-colors hover:text-[#FF0000] hover:decoration-[#FF0000]/50"
@@ -111,7 +112,7 @@ export const SyntaxReference: FC<Props> = ({ onSelect }) => {
           </a>
         </div>
         <p className="text-sm text-[#2D4059]/70 leading-relaxed">
-          DateEx is a compact language for describing exact dates, date sets, relative dates, continuous time spans, and recurring cycles.
+          DateEx is a compact language for describing exact dates, date sets, relative dates, span time spans, and recurring cycles.
         </p>
         <p className="text-sm text-[#2D4059]/70 leading-relaxed">
           Units are chained from largest to smallest:
@@ -120,7 +121,7 @@ export const SyntaxReference: FC<Props> = ({ onSelect }) => {
           Selectors choose which part of each unit to use: indexes like <code className="font-mono text-[#2D4059]">M3</code>,
           <code className="font-mono text-[#2D4059]">[...]</code> for sets or ranges,
           <code className="font-mono text-[#2D4059]">*</code> for recurring cycles,
-          <code className="font-mono text-[#2D4059]">..</code> for continuous spans, and
+          <code className="font-mono text-[#2D4059]">..</code> for span spans, and
           <code className="font-mono text-[#2D4059]">^1</code> for the last index.
         </p>
       </div>

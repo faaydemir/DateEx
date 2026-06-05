@@ -10,7 +10,7 @@ import {
   getIndexesForTypeAndParent,
   implicitParentMap,
   INFINITY,
-  JustContinuous,
+  JustSpan,
   JustDate,
   JustDateHierarchical,
   JustDateSet,
@@ -86,7 +86,7 @@ export type DateExTerm = {
 // ─── Point expression ────────────────────────────────────
 //
 //  A single resolved date — no cycles, no wildcards.
-//  Shared by ContinuousExpr bounds.
+//  Shared by SpanExpr bounds.
 //  Implicit parent resolution handled at domain layer.
 
 export type DateExPointExpr =
@@ -126,14 +126,14 @@ export type DateExRelativeExpr = {
   amount: number
 }
 
-// ─── Continuous expression ───────────────────────────────
+// ─── Span expression ───────────────────────────────
 //
 //  Y2023..Y2024   active from start until end
 //  Y2023..        open end
 //  ..Y2024        open start
 
-export type DateExContinuousExpr = {
-  type: "continuous"
+export type DateExSpanExpr = {
+  type: "span"
   from: DateExPointExpr | null  // null = open start
   to:   DateExPointExpr | null  // null = open end
 }
@@ -153,7 +153,7 @@ export type DateExExpr =
   | DateExAnchorExpr
   | DateExCycleExpr
   | DateExRelativeExpr
-  | DateExContinuousExpr
+  | DateExSpanExpr
   | DateExSetExpr
 
 function toJustDateType(unit: DateExUnitType): JustDateType {
@@ -425,8 +425,8 @@ export function exprToDateEx(expr: DateExExpr): DateEx {
       return new DateEx(relativeToJustDate(expr))
     case "cycle":
       return new DateEx(cycleToDateCycle(expr))
-    case "continuous":
-      return new DateEx(new JustContinuous(
+    case "span":
+      return new DateEx(new JustSpan(
         expr.from ? pointToJustDate(expr.from) : NEGATIVE_INFINITY,
         expr.to ? pointToJustDate(expr.to) : INFINITY,
       ))
@@ -464,8 +464,8 @@ export class DateExpression {
   isRelative():   this is DateExpression & { expr: DateExRelativeExpr   } {
     return this.expr.type === "relative"
   }
-  isContinuous(): this is DateExpression & { expr: DateExContinuousExpr } {
-    return this.expr.type === "continuous"
+  isSpan(): this is DateExpression & { expr: DateExSpanExpr } {
+    return this.expr.type === "span"
   }
   isSet():        this is DateExpression & { expr: DateExSetExpr        } {
     return this.expr.type === "set"
@@ -509,8 +509,8 @@ export class DateExpression {
 //    type: "relative", unit: "day", op: "+", amount: 1
 //  }
 //
-//  Y2023..Y2024  →  DateExContinuousExpr {
-//    type: "continuous",
+//  Y2023..Y2024  →  DateExSpanExpr {
+//    type: "span",
 //    from: { type: "anchor", terms: [{ unit: "year", selector: { type: "scalar", n: 2023 }, cycle: false }] },
 //    to:   { type: "anchor", terms: [{ unit: "year", selector: { type: "scalar", n: 2024 }, cycle: false }] }
 //  }

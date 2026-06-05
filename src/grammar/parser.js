@@ -224,8 +224,8 @@ function peg$parse(input, options) {
     }
     return t
   };
-  var peg$f2 = function(expr) { return { type: "continuous", until: expr } };
-  var peg$f3 = function(from, to) { return { type: "continuous", from, until: to } };
+  var peg$f2 = function(expr) { return { type: "span", until: expr } };
+  var peg$f3 = function(from, to) { return { type: "span", from, until: to } };
   var peg$f4 = function(first, rest) { return { type: "set", items: [first, ...rest.map(r => r[1])] } };
   var peg$f5 = function(bounds, expr) {
     if (expr.type !== "cycle") {
@@ -520,7 +520,7 @@ function peg$parse(input, options) {
   function peg$parseDateEx() {
     var s0;
 
-    s0 = peg$parseContinuousExpr();
+    s0 = peg$parseSpanExpr();
     if (s0 === peg$FAILED) {
       s0 = peg$parseSetExpr();
       if (s0 === peg$FAILED) {
@@ -557,7 +557,7 @@ function peg$parse(input, options) {
     return s0;
   }
 
-  function peg$parseContinuousExpr() {
+  function peg$parseSpanExpr() {
     var s0, s1, s2, s3, s4;
 
     s0 = peg$currPos;
@@ -585,7 +585,7 @@ function peg$parse(input, options) {
       s0 = peg$currPos;
       s1 = peg$currPos;
       peg$silentFails++;
-      s2 = peg$parseInfixContinuous();
+      s2 = peg$parseInfixSpan();
       peg$silentFails--;
       if (s2 !== peg$FAILED) {
         peg$currPos = s1;
@@ -629,7 +629,7 @@ function peg$parse(input, options) {
     return s0;
   }
 
-  function peg$parseInfixContinuous() {
+  function peg$parseInfixSpan() {
     var s0, s1, s2, s3, s4;
 
     s0 = peg$currPos;
@@ -825,7 +825,7 @@ function peg$parse(input, options) {
   function peg$parseSetItem() {
     var s0;
 
-    s0 = peg$parseContinuousExpr();
+    s0 = peg$parseSpanExpr();
     if (s0 === peg$FAILED) {
       s0 = peg$parseBoundedCycleExpr();
       if (s0 === peg$FAILED) {

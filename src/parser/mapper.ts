@@ -3,7 +3,7 @@ import type {
     DateExAnchorExpr,
     DateExCycleExpr,
     DateExRelativeExpr,
-    DateExContinuousExpr,
+    DateExSpanExpr,
     DateExSetExpr,
     DateExPointExpr,
     DateExTerm,
@@ -70,8 +70,8 @@ type RawRelative = {
     amount: number
 }
 
-type RawContinuous = {
-    type: "continuous"
+type RawSpan = {
+    type: "span"
     from?: RawPointExpr | null
     until?: RawPointExpr | null
 }
@@ -82,7 +82,7 @@ type RawSet = {
 }
 
 type RawPointExpr = RawAnchor | RawRelative
-type RawNode = RawAnchor | RawCycle | RawRelative | RawContinuous | RawSet
+type RawNode = RawAnchor | RawCycle | RawRelative | RawSpan | RawSet
 
 // ═══════════════════════════════════════════════════════
 //  Mappers
@@ -172,9 +172,9 @@ function mapRelative(raw: RawRelative): DateExRelativeExpr {
     }
 }
 
-function mapContinuous(raw: RawContinuous): DateExContinuousExpr {
+function mapSpan(raw: RawSpan): DateExSpanExpr {
     return {
-        type: "continuous",
+        type: "span",
         from: raw.from ? mapPointExpr(raw.from) : null,
         to: raw.until ? mapPointExpr(raw.until) : null,
     }
@@ -192,7 +192,7 @@ function mapNode(raw: RawNode): DateExExpr {
         case "anchor": return mapAnchor(raw)
         case "cycle": return mapCycle(raw)
         case "relative": return mapRelative(raw)
-        case "continuous": return mapContinuous(raw)
+        case "span": return mapSpan(raw)
         case "set": return mapSet(raw)
     }
 }

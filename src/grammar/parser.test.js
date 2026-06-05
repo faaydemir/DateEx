@@ -100,7 +100,7 @@ describe('parser tests', () => {
     })
   })
 
-  describe('continuous expressions', () => {
+  describe('span expressions', () => {
     test.each([
       '..Y2026-M4',
       '..Y2026',
@@ -110,7 +110,7 @@ describe('parser tests', () => {
       'Y2023..Y2025',
       'Y2023-M1..Y2026-D4',
     ])('parses %s', (sample) => {
-      expectParsesAs(sample, 'continuous')
+      expectParsesAs(sample, 'span')
     })
   })
 

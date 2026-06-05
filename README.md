@@ -297,7 +297,7 @@ The `from` and `to` values are anchors and support the full anchor syntax.
 
 ## Continues
 
-A continues expression represents a continuous time range from a start point to an end point. It uses the `..` operator to denote the range span. If there is no start or end, it represents infinity (open-ended).
+A continues expression represents a span time range from a start point to an end point. It uses the `..` operator to denote the range span. If there is no start or end, it represents infinity (open-ended).
 
 The syntax uses anchors at year level:
 
@@ -322,13 +322,13 @@ The continues expression describes a **bounded time period** rather than a recur
 
 **Difference from Bounded Cycles:**
 - **Bounded Cycles** (`[from>to]-cycle`): Restrict a recurring pattern to a date range
-- **Continues** (`start..end`): Define a simple continuous time period with no recurrence
+- **Continues** (`start..end`): Define a simple span time period with no recurrence
 
 | Expression              | Kind                  | Meaning                                |
 | ----------------------- | --------------------- | -------------------------------------- |
 | `[Y2023>Y2027]-M*`      | Bounded cycle         | Every month from 2023 through 2027     |
-| `Y2023..Y2027`          | Continues             | The continuous span from 2023 to 2027  |
-| `Y2023-M1..Y2023-M12`   | Continues             | All of 2023 as a continuous period     |
+| `Y2023..Y2027`          | Continues             | The span span from 2023 to 2027  |
+| `Y2023-M1..Y2023-M12`   | Continues             | All of 2023 as a span period     |
 
 ---
 

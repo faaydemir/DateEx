@@ -1,6 +1,6 @@
 import { useEffect, useState, type FC } from 'react'
 
-type ExampleGroup = 'anchor' | 'current' | 'relative' | 'cycle' | 'continuous'
+type ExampleGroup = 'anchor' | 'current' | 'relative' | 'cycle' | 'span'
 
 interface Example {
   label: string
@@ -14,7 +14,7 @@ const EXAMPLE_GROUPS: { group: ExampleGroup; label: string }[] = [
   { group: 'current', label: 'Current' },
   { group: 'relative', label: 'Relative' },
   { group: 'cycle', label: 'Cycle' },
-  { group: 'continuous', label: 'Continuous' },
+  { group: 'span', label: 'Span' },
 ]
 
 const EXAMPLES: Example[] = [
@@ -67,10 +67,10 @@ const EXAMPLES: Example[] = [
   { label: '[Y2026-M3>Y2027-M9]-M*', meaning: 'Every month from March 2026 through September 2027', group: 'cycle' },
   { label: '[Y2025>Y2026]-W*-D5', meaning: 'Every Friday from 2025 through 2026', group: 'cycle' },
 
-  { label: 'Y2023..Y2026', meaning: 'The continuous span from 2023 through 2026', group: 'continuous', featured: true },
-  { label: 'Y2023-M1..Y2023-M12', meaning: 'All of 2023 as a continuous period', group: 'continuous' },
-  { label: 'Y2023-M6..Y2026-M3', meaning: 'From June 2023 through March 2026', group: 'continuous' },
-  { label: 'Y2023-M1..Y2026-M12', meaning: 'From January 2023 through December 2026', group: 'continuous' },
+  { label: 'Y2023..Y2026', meaning: 'The span span from 2023 through 2026', group: 'span', featured: true },
+  { label: 'Y2023-M1..Y2023-M12', meaning: 'All of 2023 as a span period', group: 'span' },
+  { label: 'Y2023-M6..Y2026-M3', meaning: 'From June 2023 through March 2026', group: 'span' },
+  { label: 'Y2023-M1..Y2026-M12', meaning: 'From January 2023 through December 2026', group: 'span' },
 ]
 
 const GROUP_COLORS: Record<ExampleGroup, string> = {
@@ -78,7 +78,7 @@ const GROUP_COLORS: Record<ExampleGroup, string> = {
   current: 'border-[#b21f73]/40 text-[#b21f73] hover:border-[#b21f73] hover:bg-[#b21f73]/10',
   relative: 'border-[#c77700]/35 text-[#c77700] hover:border-[#c77700] hover:bg-[#c77700]/10',
   cycle: 'border-[#1f8a4c]/35 text-[#1f8a4c] hover:border-[#1f8a4c] hover:bg-[#1f8a4c]/10',
-  continuous: 'border-[#6f45b7]/35 text-[#6f45b7] hover:border-[#6f45b7] hover:bg-[#6f45b7]/10',
+  span: 'border-[#6f45b7]/35 text-[#6f45b7] hover:border-[#6f45b7] hover:bg-[#6f45b7]/10',
 }
 
 const GROUP_LABEL_COLORS: Record<ExampleGroup, string> = {
@@ -86,7 +86,7 @@ const GROUP_LABEL_COLORS: Record<ExampleGroup, string> = {
   current: 'text-[#b21f73]',
   relative: 'text-[#c77700]',
   cycle: 'text-[#1f8a4c]',
-  continuous: 'text-[#6f45b7]',
+  span: 'text-[#6f45b7]',
 }
 
 const VISIBLE_EXAMPLE_COUNT = EXAMPLES.filter((ex) => ex.featured).length

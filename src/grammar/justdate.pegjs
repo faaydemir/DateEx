@@ -34,7 +34,7 @@
 //  relative    →  unit + (+/-) + integer
 //                 D+1  M-2  Y+1
 //
-//  continuous  →  ".." + point-expr
+//  span  →  ".." + point-expr
 //                 active until that date
 //
 //  bounds      →  [point-expr > point-expr]
@@ -68,7 +68,7 @@
 // ═════════════════════════════════════════════════════════
 
 DateEx
-  = ContinuousExpr
+  = SpanExpr
   / SetExpr
   / BoundedCycleExpr
   / Expr
@@ -76,7 +76,7 @@ DateEx
 // ═════════════════════════════════════════════════════════
 //  POINT EXPRESSION
 //  a single resolved date — no cycles, no wildcards
-//  shared by ContinuousExpr and Bounds
+//  shared by SpanExpr and Bounds
 // ═════════════════════════════════════════════════════════
 
 PointExpr
@@ -93,17 +93,17 @@ PointExpr
   }
 
 // ═════════════════════════════════════════════════════════
-//  CONTINUOUS  ..point-expr
+//  SPAN  ..point-expr
 //  "active until this date"
 // ═════════════════════════════════════════════════════════
 
-ContinuousExpr
+SpanExpr
   = ".." expr:PointExpr
-  { return { type: "continuous", until: expr } }
-  / &InfixContinuous from:PointExpr ".." to:PointExpr
-  { return { type: "continuous", from, until: to } }
+  { return { type: "span", until: expr } }
+  / &InfixSpan from:PointExpr ".." to:PointExpr
+  { return { type: "span", from, until: to } }
 
-InfixContinuous
+InfixSpan
   = (!".." .)* ".."
 
 // ═════════════════════════════════════════════════════════
@@ -118,7 +118,7 @@ SetExpr
   { return { type: "set", items: [first, ...rest.map(r => r[1])] } }
 
 SetItem
-  = ContinuousExpr
+  = SpanExpr
   / BoundedCycleExpr
   / Expr
 
@@ -415,7 +415,7 @@ INT
 //  D+5
 //  W+1
 
-//  CONTINUOUS
+//  SPAN
 //  ..Y2026-M4
 //  ..Y2026
 //  ..M3-Dm15
@@ -439,4 +439,4 @@ INT
 //  Y2026-M1-D1-Dm5                → D and Dm cannot coexist
 //  [Y2026-M1-D1>Y2027-M9-D1]-M*  → bound deeper than cycle
 //  [Y2026>Y2027]-Y2026-M1         → bounds on non-cycle
-//  ..M*                           → continuous cannot contain cycle
+//  ..M*                           → span cannot contain cycle

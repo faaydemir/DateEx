@@ -7,7 +7,7 @@ export enum JustDateType {
     MONTH = "month",
     QUARTER = "quarter",
     YEAR = "year",
-    CONTINUOUS = "continuous"
+    SPAN = "span"
 }
 
 export interface IndexRange {
@@ -248,17 +248,6 @@ export class JustDateHierarchical {
                 throw new Error("month day cannot be used with week");
             }
 
-            if (!Number.isInteger(unit.value)) {
-                throw new Error(`Invalid index for ${unit.type}: ${unit.value}`);
-            }
-            if (i > 0) {
-                const parent = orderedUnits[i - 1];
-                const indexes = getIndexesForTypeAndParent(unit.type, parent.type);
-                if (!indexes.includes(unit.value)) {
-                    throw new Error(`Index ${unit.value} is out of range for ${unit.type} in ${parent.type}`);
-                }
-            }
-
             seenTypes.add(unit.type);
         }
         return orderedUnits;
@@ -327,20 +316,11 @@ export class JustDateHierarchical {
             } else if (parent === JustDateType.QUARTER && quarter !== undefined) {
                 // monthDay is day index within quarter
                 const quarterStartMonth = (quarter - 1) * 3 + 1;
-                const quarterStart = DateTime.utc(year, quarterStartMonth, 1);
-                const quarterEnd = quarterStart.plus({ months: 3 }).minus({ days: 1 });
-                const dt = quarterStart.plus({ days: monthDay - 1 });
-                if (dt < quarterStart || dt > quarterEnd) {
-                    throw new Error(`Index ${monthDay} is out of range for ${JustDateType.MONTH_DAY} in ${JustDateType.QUARTER}`);
-                }
+                const dt = DateTime.utc(year, quarterStartMonth, 1).plus({ days: monthDay - 1 });
                 return new JustMonthDay(dt.year, dt.month, dt.day);
             } else if (parent === JustDateType.YEAR) {
                 // monthDay is day index within year
-                const yearStart = DateTime.utc(year, 1, 1);
-                const dt = yearStart.plus({ days: monthDay - 1 });
-                if (dt.year !== year) {
-                    throw new Error(`Index ${monthDay} is out of range for ${JustDateType.MONTH_DAY} in ${JustDateType.YEAR}`);
-                }
+                const dt = DateTime.utc(year, 1, 1).plus({ days: monthDay - 1 });
                 return new JustMonthDay(dt.year, dt.month, dt.day);
             }
         }
@@ -837,7 +817,7 @@ export abstract class JustDate {
     }
 
     protected abstract toJSONValue(): any;
-    static fromJSON(json: any): JustDay | JustMonthDay | JustWeek | JustMonth | JustQuarter | JustYear | JustContinuous {
+    static fromJSON(json: any): JustDay | JustMonthDay | JustWeek | JustMonth | JustQuarter | JustYear | JustSpan {
         switch (json.type) {
             case JustDateType.DAY:
                 return new JustDay(json.year, json.week, json.day);
@@ -851,8 +831,8 @@ export abstract class JustDate {
                 return new JustQuarter(json.year, json.quarter);
             case JustDateType.YEAR:
                 return new JustYear(json.year);
-            case JustDateType.CONTINUOUS:
-                return new JustContinuous(JustDate.fromJSON(json.from), JustDate.fromJSON(json.to))
+            case JustDateType.SPAN:
+                return new JustSpan(JustDate.fromJSON(json.from), JustDate.fromJSON(json.to))
             default:
                 throw new Error(`Unknown type for fromJSON: ${json.type}`);
         }
@@ -919,23 +899,16 @@ export class JustDay extends JustDate {
     }
 
     private ensureValid() {
-        if (!Number.isInteger(this.year)) {
-            throw new Error(`Invalid ISO week-year: ${this.year}`);
-        }
-        if (!Number.isInteger(this.week)) {
-            throw new Error(`Invalid ISO week: ${this.week}`);
-        }
-        if (!Number.isInteger(this.day)) {
-            throw new Error(`Invalid ISO day: ${this.day}`);
-        }
         if (this.week < 1 || this.week > 53) {
             throw new Error(`Invalid ISO week: ${this.week}`);
         }
         if (this.day < 1 || this.day > 7) {
             throw new Error(`Invalid ISO day: ${this.day}`);
         }
-        const dt = this.toLuxon();
-        if (!dt.isValid) {
+        // trt to convert luxon date 
+        try {
+            this.toLuxon();
+        } catch (e) {
             throw new Error(`Invalid date combination: year=${this.year}, week=${this.week}, day=${this.day}`);
         }
     }
@@ -1004,19 +977,6 @@ export class JustMonthDay extends JustDate {
 
     constructor(year: number, month: number, dayOfMonth: number) {
         super(JustDateType.MONTH_DAY);
-        if (!Number.isInteger(year)) {
-            throw new Error(`Invalid year: ${year}`);
-        }
-        if (!Number.isInteger(month) || month < 1 || month > 12) {
-            throw new Error(`Invalid month: ${month}`);
-        }
-        if (!Number.isInteger(dayOfMonth) || dayOfMonth < 1) {
-            throw new Error(`Invalid day of month: ${dayOfMonth}`);
-        }
-        const dt = DateTime.utc(year, month, dayOfMonth);
-        if (!dt.isValid || dt.year !== year || dt.month !== month || dt.day !== dayOfMonth) {
-            throw new Error(`Invalid calendar date: year=${year}, month=${month}, day=${dayOfMonth}`);
-        }
         this.realYear = year;
         this.realMonth = month;
         this.realQuarter = Math.floor((month - 1) / 3) + 1;
@@ -1373,19 +1333,19 @@ export class JustYear extends JustDate {
 }
 
 
-export class JustContinuous extends JustDate {
+export class JustSpan extends JustDate {
     readonly from: JustDate
     readonly to: JustDate
 
     constructor(from: JustDate, to: JustDate) {
-        super(JustDateType.CONTINUOUS);
+        super(JustDateType.SPAN);
         this.from = from
         this.to = to
     }
 
     protected toJSONValue() {
         return {
-            type: JustDateType.CONTINUOUS,
+            type: JustDateType.SPAN,
             from: this.from.toJSON(),
             to: this.to.toJSON()
         };
@@ -1400,23 +1360,23 @@ export class JustContinuous extends JustDate {
     }
 
 
-    protected addDaysInternal(days: number): JustContinuous {
-        return new JustContinuous(this.from, this.to.firstDay.addDays(days));
+    protected addDaysInternal(days: number): JustSpan {
+        return new JustSpan(this.from, this.to.firstDay.addDays(days));
     }
 
-    protected addWeeksInternal(weeks: number): JustContinuous {
-        return new JustContinuous(this.from, this.to.firstDay.addWeeks(weeks));
+    protected addWeeksInternal(weeks: number): JustSpan {
+        return new JustSpan(this.from, this.to.firstDay.addWeeks(weeks));
     }
-    protected addQuartersInternal(quarters: number): JustContinuous {
-        return new JustContinuous(this.from, this.to.firstDay.addQuarters(quarters));
-    }
-
-    protected addMonthsInternal(months: number): JustContinuous {
-        return new JustContinuous(this.from, this.to.firstDay.addMonths(months));
+    protected addQuartersInternal(quarters: number): JustSpan {
+        return new JustSpan(this.from, this.to.firstDay.addQuarters(quarters));
     }
 
-    protected addYearsInternal(years: number): JustContinuous {
-        return new JustContinuous(this.from, this.to.firstDay.addYears(years));
+    protected addMonthsInternal(months: number): JustSpan {
+        return new JustSpan(this.from, this.to.firstDay.addMonths(months));
+    }
+
+    protected addYearsInternal(years: number): JustSpan {
+        return new JustSpan(this.from, this.to.firstDay.addYears(years));
     }
 }
 
@@ -1664,22 +1624,6 @@ export class DateCycle {
         if (cyclePattern[0].type !== JustDateType.YEAR) {
             this.cyclePattern.unshift(new CycleUnit(JustDateType.YEAR));
         }
-        else {
-            for (const index of cyclePattern[0].indexes) {
-                if (!Number.isInteger(index)) {
-                    throw new Error(`Invalid index for ${cyclePattern[0].type}: ${index}`);
-                }
-            }
-        }
-
-        for (let i = 1; i < this.cyclePattern.length; i++) {
-            const indexes = getIndexesForTypeAndParent(this.cyclePattern[i].type, this.cyclePattern[i - 1].type);
-            for (const index of this.cyclePattern[i].indexes) {
-                if (!Number.isInteger(index) || !indexes.includes(index)) {
-                    throw new Error(`Index ${index} is out of range for ${this.cyclePattern[i].type} in ${this.cyclePattern[i - 1].type}`);
-                }
-            }
-        }
 
         this.type = cyclePattern[cyclePattern.length - 1].type;
         this.from = from ?? NEGATIVE_INFINITY;
@@ -1859,8 +1803,6 @@ export class DateCycle {
             to
         );
     }
-
-
 
     static fromJSON(json: any): DateCycle {
         return new DateCycle(
