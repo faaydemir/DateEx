@@ -180,19 +180,24 @@ export interface DateUnitRelative {
 export class CycleUnit {
     readonly type: JustDateType;
     readonly indexes: number[];
+    readonly step: number | null;
 
-    constructor(type: JustDateType, indexes?: number[]) {
+    constructor(type: JustDateType, indexes?: number[], step?: number | null) {
         this.type = type;
         this.indexes = indexes ?? [];
+        this.step = step ?? null;
     }
     matchDateUnit(dateUnit: DateUnit): boolean {
         const typeMatch = this.type === dateUnit.type
         const indexMatch = this.indexes.length === 0 || this.indexes.includes(dateUnit.value);
-        return typeMatch && indexMatch;
+        const stepBase = this.indexes.length > 0 ? Math.min(...this.indexes) : 1;
+        const stepMatch = this.step == null || (dateUnit.value - stepBase) % this.step === 0;
+        return typeMatch && indexMatch && stepMatch;
     }
 
     equals(other: CycleUnit): boolean {
         if (this.type !== other.type) return false;
+        if (this.step !== other.step) return false;
         if (this.indexes.length !== other.indexes.length) return false;
         const currentSet = new Set(this.indexes);
         for (const idx of other.indexes) {
@@ -201,6 +206,7 @@ export class CycleUnit {
         return true;
     }
     isEvery(parentType?: JustDateType): boolean {
+        if (this.step != null) return false;
         if (this.indexes.length === 0) return true;
         if (!parentType) return false;
 
@@ -1780,6 +1786,7 @@ export class DateCycle {
             cyclePatternOrdered: this.cyclePattern.map((unit) => ({
                 type: unit.type,
                 indexes: unit.indexes,
+                ...(unit.step == null ? {} : { step: unit.step }),
             })),
             from: this.from.toJSON(),
             to: this.to.toJSON(),
@@ -1840,7 +1847,7 @@ export class DateCycle {
     static fromJSON(json: any): DateCycle {
         return new DateCycle(
             (json.cyclePatternOrdered ?? []).map(
-                (unit: any) => new CycleUnit(unit.type, unit.indexes ?? []),
+                (unit: any) => new CycleUnit(unit.type, unit.indexes ?? [], unit.step ?? null),
             ),
             JustDate.fromJSON(json.from),
             JustDate.fromJSON(json.to),

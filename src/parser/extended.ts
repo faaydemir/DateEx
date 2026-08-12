@@ -10,7 +10,7 @@ import {
   TimeEx,
   type TimeUnit,
 } from './JustTime.ts'
-import { parseToDomain } from './index.ts'
+import { mapRawNode } from './mapper.ts'
 import type { DateExDayMode, DateExIndexVal, DateExRangeItem, DateExSelector, DateExUnitType } from './DateExpression.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +46,7 @@ type RawTerm = {
   unit: ExtendedUnitType | "hour" | "minute" | "second" | "millisecond"
   selector?: RawSelectorValue
   cycle: boolean
+  step?: number | null
   mode?: DateExDayMode
 }
 
@@ -97,6 +98,7 @@ type TimeTerm = {
   unit: JustTimeType
   selector: DateExSelector
   cycle: boolean
+  step?: number | null
 }
 
 export interface ExtendedMixedDomainModel {
@@ -160,93 +162,36 @@ function splitRawTerms(terms: RawTerm[]) {
   }
 }
 
-function rawUnitToToken(unit: RawTerm["unit"]): string {
-  switch (rawUnitToUnit(unit)) {
-    case "year": return "Y"
-    case "quarter": return "Q"
-    case "month": return "M"
-    case "week": return "W"
-    case "day": return "D"
-    case "monthday": return "Dm"
-    case JustTimeType.HOUR: return "H"
-    case JustTimeType.MIN: return "Mi"
-    case JustTimeType.SECOND: return "S"
-    case JustTimeType.MS: return "Ms"
-    default:
-      throw new Error(`Unsupported unit: ${unit}`)
-  }
-}
-
-function serializeIndex(index: RawIndexVal): string {
-  return index.type === "ref" ? `^${index.n}` : String(index.n)
-}
-
-function serializeRangeItem(item: RawRangeItem): string {
-  switch (item.type) {
-    case "single": return serializeIndex(item.index)
-    case "negation": return `!${serializeIndex(item.index)}`
-    case "open-left": return `<${serializeIndex(item.to)}`
-    case "open-right": return `${serializeIndex(item.from)}>`
-    case "span": return `${serializeIndex(item.from)}>${serializeIndex(item.to)}`
-  }
-}
-
-function serializeSelector(selector: RawSelectorValue | undefined, cycle: boolean): string {
-  const suffix = cycle ? "*" : ""
-  if (!selector) return suffix
-  if (selector === "*") return "*"
-  if (selector.type === "scalar") return `${selector.n}${suffix}`
-  if (selector.type === "ref") return `^${selector.n}${suffix}`
-  return `[${selector.items.map(serializeRangeItem).join(",")}]${suffix}`
-}
-
-function serializeTerm(term: RawTerm): string {
-  return `${rawUnitToToken(term.unit)}${serializeSelector(term.selector, term.cycle)}`
-}
-
-function serializeTerms(terms: RawTerm[]): string {
-  return terms.map(serializeTerm).join("-")
-}
-
-function serializeDatePoint(point: RawPointExpr | null | undefined): string | null {
-  if (!point) return null
-  if (point.type === "relative") {
-    if (isTimeUnit(rawUnitToUnit(point.unit))) return null
-    return `${rawUnitToToken(point.unit)}${point.op}${point.amount}`
-  }
-
-  const { dateTerms } = splitRawTerms(point.terms)
-  return dateTerms.length ? serializeTerms(dateTerms) : null
-}
-
-function dateExpressionFromRaw(raw: RawNode): string | null {
+function dateNodeFromRaw(raw: RawNode): RawNode | null {
   switch (raw.type) {
     case "anchor": {
       const { dateTerms } = splitRawTerms(raw.terms)
-      return dateTerms.length ? serializeTerms(dateTerms) : null
+      return dateTerms.length ? { type: "anchor", terms: dateTerms } : null
     }
     case "cycle": {
       const { dateTerms } = splitRawTerms(raw.terms)
-      if (!dateTerms.length) return null
-
-      const body = serializeTerms(dateTerms)
-      const from = serializeDatePoint(raw.from)
-      const to = serializeDatePoint(raw.to)
-      return from || to ? `[${from ?? ""}>${to ?? ""}]-${body}` : body
+      return dateTerms.length ? {
+        type: dateTerms.some((term) => term.cycle) ? "cycle" : "anchor",
+        terms: dateTerms,
+        from: raw.from,
+        to: raw.to,
+      } as RawNode : null
     }
     case "relative":
-      return isTimeUnit(rawUnitToUnit(raw.unit))
-        ? null
-        : `${rawUnitToToken(raw.unit)}${raw.op}${raw.amount}`
+      return isTimeUnit(rawUnitToUnit(raw.unit)) ? null : raw
     case "span": {
-      const from = serializeDatePoint(raw.from)
-      const to = serializeDatePoint(raw.until)
+      const from = raw.from ? dateNodeFromRaw(raw.from) : null
+      const to = raw.until ? dateNodeFromRaw(raw.until) : null
       if (!from && !to) return null
-      return `${from ?? ""}..${to ?? ""}`
+      return {
+        type: "span",
+        from: from && (from.type === "anchor" || from.type === "relative") ? from : undefined,
+        until: to && (to.type === "anchor" || to.type === "relative") ? to : undefined,
+      }
     }
     case "set": {
-      const items = raw.items.map(dateExpressionFromRaw).filter((item): item is string => !!item)
-      return items.length ? `[${items.join(",")}]` : null
+      const items = raw.items.map(dateNodeFromRaw).filter((item): item is RawNode => !!item)
+      return items.length ? { type: "set", items } : null
     }
   }
 }
@@ -325,6 +270,7 @@ function mapTimeTerm(raw: RawTerm): TimeTerm {
     unit,
     selector: mapSelector(raw.selector, raw.cycle),
     cycle: raw.cycle,
+    step: raw.step ?? null,
   }
 }
 
@@ -513,7 +459,7 @@ function pointToJustTime(expr: TimePointExpr): JustTime {
 
 function cycleToTimeCycle(expr: Extract<TimeExpr, { type: "cycle" }>): TimeCycle {
   return new TimeCycle(
-    expr.terms.map((term) => new TimeCycleUnit(term.unit, selectorToCycleIndexes(term))),
+    expr.terms.map((term) => new TimeCycleUnit(term.unit, selectorToCycleIndexes(term), term.step ?? null)),
     expr.from ? pointToJustTime(expr.from) : undefined,
     expr.to ? pointToJustTime(expr.to) : undefined,
   )
@@ -578,25 +524,20 @@ export function parseExtendedToDomain(input: string): { domainModel: ExtendedDom
     const kind = expressionKind(raw)
 
     if (kind === "date") {
-      const parsed = parseToDomain(trimmed)
-      return { domainModel: parsed.domainModel, ast: raw, error: parsed.error }
+      return { domainModel: mapRawNode(raw as never).toDateEx(), ast: raw, error: null }
     }
 
     if (kind === "time") {
       return { domainModel: exprToTimeEx(mapTimeNode(raw)), ast: raw, error: null }
     }
 
-    const dateExpression = dateExpressionFromRaw(raw)
+    const dateNode = dateNodeFromRaw(raw)
     const timeNode = timeNodeFromRaw(raw)
-    const dateResult = dateExpression ? parseToDomain(dateExpression) : { domainModel: null, error: null }
-    if (dateResult.error) {
-      return { domainModel: null, ast: raw, error: dateResult.error }
-    }
 
     return {
       domainModel: {
         type: "mixed",
-        dateEx: dateResult.domainModel ?? undefined,
+        dateEx: dateNode ? mapRawNode(dateNode as never).toDateEx() : undefined,
         timeEx: timeNode ? exprToTimeEx(mapTimeNode(timeNode)) : undefined,
       },
       ast: raw,

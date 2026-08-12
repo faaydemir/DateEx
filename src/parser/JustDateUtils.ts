@@ -425,7 +425,9 @@ export const formatDateExString = (
       if (isEvery && cascadingEvery && i < cycleValue.cyclePattern.length - 1) {
         // do nothing
       } else {
-        if (period.isEvery(parent?.type)) {
+        if (period.step != null) {
+          desc += t(`Every {0} {1} `, period.step, toTypeString(period.type, false, t));
+        } else if (period.isEvery(parent?.type)) {
           desc += t(`Every {0} `, toTypeString(period.type, false, t));
         } else if (period.indexes) {
           if (

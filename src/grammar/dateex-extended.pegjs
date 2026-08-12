@@ -23,6 +23,10 @@
 //  cycle       →  term whose selector ends with *
 //                 M*  D[1,3]*  W1*
 //
+//  stepped     →  cycle term with a /n step
+//                 D*/2       every 2nd day in its parent
+//                 M*/2-D*/2  every 2nd month, every 2nd day in those months
+//
 //  point-expr  →  single resolved date, no cycles
 //                 Y2026-M3  D+1  M3-Dm15
 //
@@ -255,7 +259,7 @@ TermExpr
 
 Term
   = u:Unit s:Selector
-  { return { unit: u, selector: s.value, cycle: s.cycle } }
+  { return { unit: u, selector: s.value, cycle: s.cycle, step: s.step } }
 
 // ─── Unit ─────────────────────────────────────────────────
 
@@ -281,14 +285,23 @@ Unit
 //  wildcard  *         every instance (no index)
 
 Selector
-  = v:ScalarSelector "*" { return { value: v, cycle: true  } }
-  / v:RefSelector    "*" { return { value: v, cycle: true  } }
-  / v:RangeSelector  "*" { return { value: v, cycle: true  } }
-  / "*"                  { return { value: "*", cycle: true  } }
-  / v:ScalarSelector     { return { value: v, cycle: false } }
-  / v:RefSelector        { return { value: v, cycle: false } }
-  / v:RangeSelector      { return { value: v, cycle: false } }
-  / ""                   { return { value: "*", cycle: false } }
+  = v:ScalarSelector "*" step:Step? { return { value: v, cycle: true,  step: step ?? null } }
+  / v:RefSelector    "*" step:Step? { return { value: v, cycle: true,  step: step ?? null } }
+  / v:RangeSelector  "*" step:Step? { return { value: v, cycle: true,  step: step ?? null } }
+  / "*" step:Step?                  { return { value: "*", cycle: true,  step: step ?? null } }
+  / v:ScalarSelector                { return { value: v, cycle: false, step: null } }
+  / v:RefSelector                   { return { value: v, cycle: false, step: null } }
+  / v:RangeSelector                 { return { value: v, cycle: false, step: null } }
+  / ""                              { return { value: "*", cycle: false, step: null } }
+
+Step
+  = "/" n:INT
+  {
+    if (n < 2) {
+      throw new Error("Cycle step must be >= 2")
+    }
+    return n
+  }
 
 // scalar: single integer  2026  3  15
 ScalarSelector
@@ -396,6 +409,10 @@ INT
 //  Y2026-W*-D[1,5]*
 //  Y2026-M*-Dm[1>10]*
 //  Y2026-Q*-M1-Dm1
+//  D*/2
+//  M*/2-D*/2
+//  [Y2026-M1>]-D*/2
+//  [Y2026-M1>]-M*/2-D*/2
 
 //  BOUNDED CYCLE
 //  [Y2026>Y2027]-M*

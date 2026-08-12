@@ -172,7 +172,10 @@ function describeSet(node: JsonRecord): string[] {
 function describeTerm(term: JsonRecord): string {
   const unit = unitName(String(term.unit))
   if (isCurrent(term)) return `current ${unit}`
-  if (term.selector === '*') return `every ${unit}`
+  const step = stepValue(term)
+  if (term.selector === '*') {
+    return step ? `every ${step} ${plural(unit, step)}` : `every ${unit}`
+  }
   if (isRecord(term.selector)) {
     if (term.selector.type === 'scalar') {
       const n = Number(term.selector.n)
@@ -188,14 +191,17 @@ function describeTerm(term: JsonRecord): string {
 
 function cyclePhrase(term: JsonRecord): string {
   const unit = unitName(String(term.unit))
-  if (term.selector === '*') return unit
+  const step = stepValue(term)
+  if (term.selector === '*') return step ? `${step} ${plural(unit, step)}` : unit
   if (isRecord(term.selector) && term.selector.type === 'scalar') {
-    return `${unit} ${String(term.selector.n)}`
+    const phrase = `${unit} ${String(term.selector.n)}`
+    return step ? `${phrase} every ${step} ${plural(unit, step)}` : phrase
   }
   if (isRecord(term.selector) && term.selector.type === 'range') {
-    return `${unit} ${arrayOfRecords(term.selector.items).map(rangeItemText).join(', ')}`
+    const phrase = `${unit} ${arrayOfRecords(term.selector.items).map(rangeItemText).join(', ')}`
+    return step ? `${phrase} every ${step} ${plural(unit, step)}` : phrase
   }
-  return unit
+  return step ? `${unit} every ${step} ${plural(unit, step)}` : unit
 }
 
 function rangeItemText(item: JsonRecord): string {
@@ -225,6 +231,10 @@ function scalar(term: JsonRecord | undefined): number | null {
 
 function isCurrent(term: JsonRecord): boolean {
   return term.cycle !== true && term.selector === '*'
+}
+
+function stepValue(term: JsonRecord): number | null {
+  return typeof term.step === 'number' ? term.step : null
 }
 
 function isTimeUnit(unit: string): boolean {

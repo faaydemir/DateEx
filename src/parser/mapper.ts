@@ -48,6 +48,7 @@ type RawTerm = {
     unit: DateExUnitType
     selector?: RawSelectorValue
     cycle: boolean
+    step?: number | null
     mode?: DateExDayMode
 }
 
@@ -133,6 +134,7 @@ function mapTerm(raw: RawTerm): DateExTerm {
         unit: raw.unit,
         selector: mapSelector(raw.selector, raw.cycle),
         cycle: raw.cycle,
+        step: raw.step ?? null,
     }
     if (raw.unit === "day" && raw.mode) {
         term.mode = raw.mode

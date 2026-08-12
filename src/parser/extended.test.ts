@@ -52,6 +52,38 @@ describe('extended parser domain', () => {
     })
   })
 
+  test('maps JustTime stepped cycles to TimeEx cycle values', () => {
+    const result = parseExtendedToDomain('H*/2-Mi*/15')
+
+    expect(result.error).toBeNull()
+    expect((result.domainModel as TimeEx | null)?.toJSON()).toMatchObject({
+      type: 'cycle',
+      value: {
+        cyclePatternOrdered: [
+          { type: JustTimeType.HOUR, indexes: [], step: 2 },
+          { type: JustTimeType.MIN, indexes: [], step: 15 },
+        ],
+      },
+    })
+  })
+
+  test('maps nested stepped date cycles to DateEx', () => {
+    const result = parseExtendedToDomain('M*/2-D*/2')
+
+    expect(result.error).toBeNull()
+    expect(result.domainModel).toBeInstanceOf(DateEx)
+    expect((result.domainModel as DateEx | null)?.toJSON()).toMatchObject({
+      type: 'cycle',
+      value: {
+        cyclePatternOrdered: [
+          { type: 'year', indexes: [] },
+          { type: 'month', indexes: [], step: 2 },
+          { type: 'day', indexes: [], step: 2 },
+        ],
+      },
+    })
+  })
+
   test('current time units constrain cycle parents', () => {
     const currentHourCycle = parseExtendedToDomain('H-Mi*').domainModel
     const everyHourCycle = parseExtendedToDomain('H*-Mi*').domainModel

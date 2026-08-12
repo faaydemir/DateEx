@@ -80,6 +80,7 @@ export type DateExTerm = {
   unit:     DateExUnitType
   selector: DateExSelector
   cycle:    boolean
+  step?:    number | null
   mode?:    DateExDayMode   // only present when unit === "day"
 }
 
@@ -404,7 +405,7 @@ function cycleToDateCycle(expr: DateExCycleExpr): DateCycle {
   const cyclePattern = expr.terms.map((term, index) => {
     const type = toJustDateType(term.unit)
     const parent = parentTypeFor(expr.terms, index)
-    return new CycleUnit(type, selectorToCycleIndexes(term, parent))
+    return new CycleUnit(type, selectorToCycleIndexes(term, parent), term.step ?? null)
   })
 
   return new DateCycle(

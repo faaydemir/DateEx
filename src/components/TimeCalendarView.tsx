@@ -92,7 +92,7 @@ const TimeLineBar: FC<TimeLineBarProps> = ({ timeEx, hoverMs, currentMs, onHover
           {Array.from({ length: 24 }, (_, hour) => (
             <div
               key={hour}
-              className="flex h-full items-center justify-center border-l border-[#2D4059]/10 first:border-l-0"
+              className="relative flex h-full items-center justify-center before:absolute before:left-0 before:top-1/2 before:h-2 before:-translate-y-1/2 before:border-l before:border-[#2D4059]/10 first:before:hidden"
             >
               <span className="font-mono text-[10px] font-semibold text-[#2D4059]/30">
                 {String(hour).padStart(2, '0')}
@@ -197,9 +197,9 @@ function buildCycleSegments(cycle: TimeCycle): Segment[] {
 
 function indexesForCycleUnit(cycle: TimeCycle, type: JustTimeType): number[] {
   const unit = cycle.cyclePattern.find((item) => item.type === type)
-  if (unit && unit.indexes.length > 0) return unit.indexes
 
-  switch (type) {
+  const all = (() => {
+    switch (type) {
     case JustTimeType.HOUR:
       return Array.from({ length: 24 }, (_, index) => index)
     case JustTimeType.MIN:
@@ -209,7 +209,14 @@ function indexesForCycleUnit(cycle: TimeCycle, type: JustTimeType): number[] {
       return Array.from({ length: 1000 }, (_, index) => index)
     default:
       return []
-  }
+    }
+  })()
+
+  const indexes = unit && unit.indexes.length > 0 ? unit.indexes : all
+  if (!unit?.step) return indexes
+
+  const stepBase = unit.indexes.length > 0 ? Math.min(...unit.indexes) : 0
+  return indexes.filter((index) => (index - stepBase) % unit.step! === 0)
 }
 
 function mergeSegments(segments: Segment[]): Segment[] {

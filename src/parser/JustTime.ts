@@ -76,20 +76,25 @@ export interface TimeUnit {
 export class TimeCycleUnit {
     readonly type: JustTimeType;
     readonly indexes: number[];
+    readonly step: number | null;
 
-    constructor(type: JustTimeType, indexes?: number[]) {
+    constructor(type: JustTimeType, indexes?: number[], step?: number | null) {
         this.type = type;
         this.indexes = indexes ?? [];
+        this.step = step ?? null;
     }
 
     matchTimeUnit(timeUnit: TimeUnit): boolean {
         const typeMatch = this.type === timeUnit.type;
         const indexMatch = this.indexes.length === 0 || this.indexes.includes(timeUnit.value);
-        return typeMatch && indexMatch;
+        const stepBase = this.indexes.length > 0 ? Math.min(...this.indexes) : 0;
+        const stepMatch = this.step == null || (timeUnit.value - stepBase) % this.step === 0;
+        return typeMatch && indexMatch && stepMatch;
     }
 
     equals(other: TimeCycleUnit): boolean {
         if (this.type !== other.type) return false;
+        if (this.step !== other.step) return false;
         if (this.indexes.length !== other.indexes.length) return false;
         const currentSet = new Set(this.indexes);
         for (const idx of other.indexes) {
@@ -99,6 +104,7 @@ export class TimeCycleUnit {
     }
 
     isEvery(): boolean {
+        if (this.step != null) return false;
         if (this.indexes.length === 0) return true;
 
         const itemSet = new Set(this.indexes);
@@ -989,6 +995,7 @@ export class TimeCycle {
             cyclePatternOrdered: this.cyclePattern.map((unit) => ({
                 type: unit.type,
                 indexes: unit.indexes,
+                ...(unit.step == null ? {} : { step: unit.step }),
             })),
             from: this.from.toJSON(),
             to: this.to.toJSON(),
@@ -1005,7 +1012,7 @@ export class TimeCycle {
 
     static fromJSON(json: any): TimeCycle {
         return new TimeCycle(
-            json.cyclePatternOrdered.map((item: any) => new TimeCycleUnit(item.type, item.indexes)),
+            json.cyclePatternOrdered.map((item: any) => new TimeCycleUnit(item.type, item.indexes, item.step ?? null)),
             JustTime.fromJSON(json.from),
             JustTime.fromJSON(json.to),
         );

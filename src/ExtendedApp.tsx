@@ -19,6 +19,9 @@ const EXTENDED_EXAMPLES = [
   { expr: 'H+1', meaning: 'One hour from the current time' },
   { expr: 'Mi-30', meaning: 'Thirty minutes before the current time' },
   { expr: 'H*-Mi30', meaning: 'Every hour at minute 30' },
+  { expr: 'H*/2-Mi*/15', meaning: 'Every 2 hours, every 15 minutes inside those hours' },
+  { expr: 'M*/2-D*/2', meaning: 'Every 2nd month, every 2nd day inside those months' },
+  { expr: '[Y2026-M1>]-D*/2', meaning: 'Every 2 days starting from January 2026' },
   { expr: '[H9>H17]-Mi*', meaning: 'Every minute from 09:00 through 17:59' },
 ]
 

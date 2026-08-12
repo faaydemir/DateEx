@@ -45,8 +45,22 @@ describe('extended parser tests', () => {
     'H*',
     'H*-Mi[0>30]*',
     '[H9>H17]-Mi*',
+    'H*/2-Mi*/15',
+    'M*/2-D*/2',
+    '[Y2026-M1>]-D*/2',
+    '[Y2026-M1>]-M*/2-D*/2',
   ])('parses JustTime cycle %s', (sample) => {
     expectParsesAs(sample, 'cycle')
+  })
+
+  test('parses cycle steps', () => {
+    expect(parse('M*/2-D*/2')).toMatchObject({
+      type: 'cycle',
+      terms: [
+        { unit: 'month', cycle: true, step: 2 },
+        { unit: 'day', cycle: true, step: 2 },
+      ],
+    })
   })
 
   test.each([
