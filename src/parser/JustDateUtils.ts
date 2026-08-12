@@ -6,6 +6,7 @@ import {
   INFINITY,
   JustDate,
   JustDateSet,
+  JustSpan,
   JustDateType,
   JustDay,
   NEGATIVE_INFINITY,
@@ -82,7 +83,7 @@ export const toMonthDayString = (
     `.trim();
 };
 
-export const toCurrentString = (
+export const justDateToShortString = (
   justDate: JustDate,
   t?: Translate | undefined,
 ): string => {
@@ -124,8 +125,37 @@ export const toCurrentString = (
       }
     case JustDateType.YEAR:
       return justDate.firstDay.year.toString();
+    case JustDateType.SPAN:
+      const span = justDate as JustSpan
+      return `${t("From")} ${justDateToCurrentString(span.from)} ${t("Until")} ${justDateToCurrentString(span.to)}`;
     default:
       throw new Error("Unsupported JustDateType");
+  }
+};
+
+export const justDateToCurrentString = (
+  justDate: JustDate,
+  t?: Translate | undefined,
+): string => {
+  t = getTranslate(t);
+  if (!justDate.isCurrent()) {
+    return justDateToShortString(justDate, t);
+  }
+
+  switch (justDate.type) {
+    case JustDateType.DAY:
+    case JustDateType.MONTH_DAY:
+      return t("Today");
+    case JustDateType.WEEK:
+      return t("This week");
+    case JustDateType.MONTH:
+      return t("This month");
+    case JustDateType.QUARTER:
+      return t("This quarter");
+    case JustDateType.YEAR:
+      return t("This year");
+    default:
+      return justDateToShortString(justDate, t);
   }
 };
 
@@ -219,13 +249,6 @@ export const getQuarterName = (
   return `${t("Q")}${quarterIndex}`;
 };
 
-export const justDateToString = (
-  justDate: JustDate,
-  t?: Translate | undefined,
-): string => {
-  return formatJustDates([justDate], justDate.type, t)[0];
-};
-
 export const toDateExShortString = (
   date: DateEx,
   defaultStr: string = "Date",
@@ -268,6 +291,8 @@ export const toTypeString = (
       return t(plural ? "Quarters" : "Quarter");
     case JustDateType.YEAR:
       return t(plural ? "Years" : "Year");
+    case JustDateType.SPAN:
+      return t(plural ? "Spans" : "Span");
     default:
       return "";
   }
@@ -302,6 +327,25 @@ export const maxDate = (...dates: JustDate[]): JustDate => {
     max.firstDay.valueOf() >= d.firstDay.valueOf() ? max : d,
   );
 };
+
+export const getContainingUnits = (date: JustDate): JustDate[] => {
+  switch (date.type) {
+    case JustDateType.DAY:
+      return [date, date.castToWeek(), date.castToMonth(), date.castToQuarter(), date.castToYear()]
+    case JustDateType.MONTH_DAY:
+      return [date, date.castToMonth(), date.castToQuarter(), date.castToYear()]
+    case JustDateType.WEEK:
+      return [date, date.castToMonth(), date.castToQuarter(), date.castToYear()]
+    case JustDateType.MONTH:
+      return [date, date.castToQuarter(), date.castToYear()]
+    case JustDateType.QUARTER:
+      return [date, date.castToYear()]
+    case JustDateType.YEAR:
+      return [date]
+    default:
+      return [date]
+  }
+}
 
 export const getAllMatched = (
   date: DateEx,
@@ -366,10 +410,10 @@ export const formatDateExString = (
     let cycleString: string[] = [];
     const cycleValue = date.value as DateCycle;
     if (cycleValue.from && !isInfinity(cycleValue.from)) {
-      cycleString.push(t("From {0}", justDateToString(cycleValue.from, t)));
+      cycleString.push(t("From {0}", justDateToCurrentString(cycleValue.from, t)));
     }
     if (cycleValue.to && !isInfinity(cycleValue.to)) {
-      cycleString.push(t("To {0}", justDateToString(cycleValue.to, t)));
+      cycleString.push(t("To {0}", justDateToCurrentString(cycleValue.to, t)));
     }
     let desc = "";
 
@@ -429,7 +473,6 @@ export const formatJustDates = (
   if (dates.length === 0) {
     return [];
   }
-  //TODO: refactor
 
   t = getTranslate(t);
   if (!type) {
@@ -445,6 +488,27 @@ export const formatJustDates = (
   const sorted = [...dates].sort(
     (a, b) => a.firstDay.toJSON() - b.firstDay.toJSON(),
   );
+
+  if (type === JustDateType.SPAN) {
+    return sorted.map((date) => {
+      const span = date as JustSpan;
+      const hasFrom = !isInfinity(span.from);
+      const hasTo = !isInfinity(span.to);
+      const fromLabel = hasFrom ? justDateToCurrentString(span.from, t) : "";
+      const toLabel = hasTo ? justDateToCurrentString(span.to, t) : "";
+
+      if (hasFrom && hasTo) {
+        return t("From {0} until {1}", fromLabel, toLabel);
+      }
+      if (hasFrom) {
+        return t("From {0}", fromLabel);
+      }
+      if (hasTo) {
+        return t("Until {0}", toLabel);
+      }
+      return t("Any date");
+    });
+  }
 
   if (type === JustDateType.YEAR) {
     const years = sorted.map((d) => d.firstDay.year.toString());
