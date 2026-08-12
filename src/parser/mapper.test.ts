@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 import { DateExpression } from './DateExpression.ts'
+import { DateCycle, JustDateType, JustWeek } from './JustDate.ts'
 import { parseDateEx } from './mapper.ts'
 
 const validExpressions = [
@@ -94,5 +95,19 @@ describe('mapper tests', () => {
     ['Dm', 'Dm+0'],
   ])('%s resolves to the current value', (currentExpr, relativeExpr) => {
     expect(parseDateEx(currentExpr).toDateEx().equals(parseDateEx(relativeExpr).toDateEx())).toBe(true)
+  })
+
+  test('current units constrain cycle parents', () => {
+    const currentWeekCycle = parseDateEx('W-D*').toDateEx().value
+    const everyWeekCycle = parseDateEx('W*-D*').toDateEx().value
+
+    expect(currentWeekCycle).toBeInstanceOf(DateCycle)
+    expect(everyWeekCycle).toBeInstanceOf(DateCycle)
+
+    if (currentWeekCycle instanceof DateCycle && everyWeekCycle instanceof DateCycle) {
+      const currentWeek = JustWeek.now().week
+      expect(currentWeekCycle.cyclePattern.find((unit) => unit.type === JustDateType.WEEK)?.indexes).toEqual([currentWeek])
+      expect(everyWeekCycle.cyclePattern.find((unit) => unit.type === JustDateType.WEEK)?.indexes).toEqual([])
+    }
   })
 })

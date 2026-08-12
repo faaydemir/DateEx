@@ -5,6 +5,7 @@ import { ExpressionInput } from './components/ExpressionInput.tsx'
 import { ExampleChips } from './components/ExampleChips.tsx'
 import { CalendarView } from './components/CalendarView.tsx'
 import { SyntaxReference } from './components/SyntaxReference.tsx'
+import { ParseTree } from './components/ParseTree.tsx'
 
 const CURRENT_YEAR = new Date().getFullYear()
 const DATEEX_QUERY_PARAM = 'dateex'
@@ -103,7 +104,15 @@ export const App: FC = () => {
           />
           <h1 id="hero-title" className="translate-y-0.5 text-4xl md:text-5xl lg:text-4xl tracking-tight text-[#2D4059] leading-none">DateEx</h1>
         </div>
-        <p className="text-xs font-medium tracking-widest uppercase text-[#F07B3F] mb-4">Date Expression Language</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-xs font-medium tracking-widest uppercase text-[#F07B3F]">Date Expression Language</p>
+          <a
+            href="./extended"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#EA5455] underline decoration-[#EA5455]/30 underline-offset-4 hover:text-[#FF0000]"
+          >
+            Check Extended Version
+          </a>
+        </div>
       </header>
 
 
@@ -121,6 +130,9 @@ export const App: FC = () => {
           />
         </div>
 
+        {ast && (
+          <ParseTree ast={ast} />
+        )}
 
         <ExampleChips currentValue={inputValue} onSelect={handleExampleSelect} />
 

@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 
 export type UnitType = 'year' | 'quarter' | 'month' | 'week' | 'day' | 'monthday'
+export type ExtendedUnitType = UnitType | 'hour' | 'minute' | 'second' | 'millisecond'
 
 // ─── Index nodes ─────────────────────────────
 export type IdxNode = { type: 'idx'; n: number }

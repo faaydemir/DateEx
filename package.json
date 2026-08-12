@@ -4,7 +4,7 @@
   "description": "DateEx is simple grammar to define date",
   "type": "module",
   "scripts": {
-    "build:grammar": "peggy --format es --output src/grammar/parser.js src/grammar/justdate.pegjs",
+    "build:grammar": "peggy --format es --output src/grammar/parser.js src/grammar/justdate.pegjs && peggy --format es --dts --output src/grammar/extended-parser.js src/grammar/dateex-extended.pegjs",
     "prebuild": "npm run build:grammar",
     "predev": "npm run build:grammar",
     "dev": "vite",

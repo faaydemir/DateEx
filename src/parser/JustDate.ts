@@ -159,6 +159,8 @@ export const getJustDateSizeOrder = (type: JustDateType): number => {
             return 4;
         case JustDateType.YEAR:
             return 5;
+        case JustDateType.SPAN:
+            return 6;
         default:
             throw new Error(`Unknown JustDateType: ${type}`);
     }
@@ -690,6 +692,8 @@ export abstract class JustDate {
                 return JustQuarter.fromJustDate(this);
             case JustDateType.YEAR:
                 return JustYear.fromJustDate(this);
+            case JustDateType.SPAN:
+                return new JustSpan(this, this)
             default:
                 throw new Error(`Cast not supported for type: ${type}`);
         }
@@ -736,8 +740,10 @@ export abstract class JustDate {
         const { type, value } = JustDate;
 
         if (
-            getJustDateSizeOrder(type as unknown as JustDateType) <
-            getJustDateSizeOrder(this.type as unknown as JustDateType)
+            this.type != JustDateType.SPAN && (
+                getJustDateSizeOrder(type as unknown as JustDateType) <
+                getJustDateSizeOrder(this.type as unknown as JustDateType)
+            )
         ) {
             return this.firstDay.addDateUnit(JustDate).castTo(this.type);
         }
@@ -839,7 +845,7 @@ export abstract class JustDate {
     }
 
     static fromDate(date: Date): JustDay {
-        const dt = DateTime.fromJSDate(date, { zone: "utc" });
+        const dt = DateTime.fromJSDate(date);
         return new JustDay(dt.weekYear, dt.weekNumber, dt.weekday);
     }
     static fromLuxon(dt: DateTime): JustDay {
@@ -869,7 +875,7 @@ export class JustDay extends JustDate {
         this.ensureValid();
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: this.type,
             year: this.year,
@@ -878,7 +884,7 @@ export class JustDay extends JustDate {
         };
     }
 
-    static now(): JustDay {
+    static override now(): JustDay {
         return JustDay.fromDate(new Date());
     }
 
@@ -983,7 +989,7 @@ export class JustMonthDay extends JustDate {
         this.dayOfMonth = dayOfMonth;
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: JustDateType.MONTH_DAY,
             year: this.realYear,
@@ -1055,7 +1061,7 @@ export class JustWeek extends JustDate {
         return days;
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: JustDateType.WEEK,
             year: this.year,
@@ -1063,7 +1069,7 @@ export class JustWeek extends JustDate {
         };
     }
 
-    static now(): JustWeek {
+    static override now(): JustWeek {
         return JustDate.now(JustDateType.WEEK).castToWeek();
     }
 
@@ -1115,12 +1121,12 @@ export class JustMonth extends JustDate {
         this.month = month;
     }
 
-    public static now(): JustMonth {
+    public static override now(): JustMonth {
 
         return JustDate.now(JustDateType.MONTH).castToMonth();
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: JustDateType.MONTH,
             year: this.year,
@@ -1220,7 +1226,7 @@ export class JustQuarter extends JustDate {
         return months;
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: JustDateType.QUARTER,
             year: this.year,
@@ -1287,12 +1293,12 @@ export class JustYear extends JustDate {
         }
         return months;
     }
-    public static now(): JustYear {
+    public static override now(): JustYear {
 
         return JustDate.now(JustDateType.YEAR).castToYear();
     }
 
-    protected toJSONValue() {
+    protected override toJSONValue() {
         return {
             type: JustDateType.YEAR,
             year: this.year,
@@ -1333,17 +1339,42 @@ export class JustYear extends JustDate {
 }
 
 
+
 export class JustSpan extends JustDate {
     readonly from: JustDate
     readonly to: JustDate
 
+
+
     constructor(from: JustDate, to: JustDate) {
+
+        const fromIsOpen = from.equals(NEGATIVE_INFINITY);
+        const toIsOpen = to.equals(INFINITY);
+
+        if (!fromIsOpen && !toIsOpen) {
+            if (from.type !== to.type) {
+                throw new Error(`JustSpan boundaries must be the same type. Found ${from.type} and ${to.type}`);
+            }
+            if (from.firstDay.valueOf() > to.lastDay.valueOf()) {
+                throw new Error("JustSpan from boundary cannot be after to boundary");
+            }
+        }
         super(JustDateType.SPAN);
         this.from = from
         this.to = to
     }
 
-    protected toJSONValue() {
+    getBoundaryType(): JustDateType {
+        if (!this.from.equals(NEGATIVE_INFINITY)) {
+            return this.from.type;
+        }
+        if (!this.to.equals(INFINITY)) {
+            return this.to.type;
+        }
+        return JustDateType.SPAN;
+    }
+
+    protected override toJSONValue() {
         return {
             type: JustDateType.SPAN,
             from: this.from.toJSON(),
@@ -1361,22 +1392,22 @@ export class JustSpan extends JustDate {
 
 
     protected addDaysInternal(days: number): JustSpan {
-        return new JustSpan(this.from, this.to.firstDay.addDays(days));
+        return new JustSpan(this.from, this.to.addDays(days));
     }
 
     protected addWeeksInternal(weeks: number): JustSpan {
-        return new JustSpan(this.from, this.to.firstDay.addWeeks(weeks));
+        return new JustSpan(this.from, this.to.addWeeks(weeks));
     }
     protected addQuartersInternal(quarters: number): JustSpan {
-        return new JustSpan(this.from, this.to.firstDay.addQuarters(quarters));
+        return new JustSpan(this.from, this.to.addQuarters(quarters));
     }
 
     protected addMonthsInternal(months: number): JustSpan {
-        return new JustSpan(this.from, this.to.firstDay.addMonths(months));
+        return new JustSpan(this.from, this.to.addMonths(months));
     }
 
     protected addYearsInternal(years: number): JustSpan {
-        return new JustSpan(this.from, this.to.firstDay.addYears(years));
+        return new JustSpan(this.from, this.to.addYears(years));
     }
 }
 
@@ -1573,13 +1604,13 @@ export class DateEx {
 
 
 class BaseInfinityDay extends JustDay {
-    add(_: number): JustDate {
+    override add(_: number): JustDate {
         return this;
     }
-    addMonths(_: number): JustDate {
+    override addMonths(_: number): JustDate {
         return this;
     }
-    addYears(_: number): JustDate {
+    override addYears(_: number): JustDate {
         return this;
     }
 
@@ -1803,6 +1834,8 @@ export class DateCycle {
             to
         );
     }
+
+
 
     static fromJSON(json: any): DateCycle {
         return new DateCycle(

@@ -10,6 +10,8 @@ const DAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 interface DateProps {
     isMatch: boolean
     isContained: boolean
+    isSelected?: boolean
+    hoverLabel?: string | null
 }
 
 interface YearProps extends DateProps {
@@ -36,40 +38,67 @@ interface DayProps extends DateProps {
 
 // --- Prop Builders ---
 
-const buildDayProps = (dateEx: DateEx | undefined, day: JustDay): DayProps => ({
+const buildDayProps = (
+    dateEx: DateEx | undefined,
+    day: JustDay,
+    selectedDay?: JustDay,
+    dayHoverLabel?: (day: JustDay) => string | null,
+): DayProps => ({
     value: day,
     isMatch: dateEx?.isMatch(day) ?? false,
     isContained: dateEx?.contains(day) ?? false,
+    isSelected: selectedDay ? day.toInt() === selectedDay.toInt() : false,
+    hoverLabel: dayHoverLabel?.(day) ?? null,
 })
 
-const buildWeekProps = (dateEx: DateEx | undefined, week: JustWeek): WeekProps => ({
+const buildWeekProps = (
+    dateEx: DateEx | undefined,
+    week: JustWeek,
+    selectedDay?: JustDay,
+    dayHoverLabel?: (day: JustDay) => string | null,
+): WeekProps => ({
     value: week,
     isMatch: dateEx?.isMatch(week) ?? false,
     isContained: dateEx?.contains(week) ?? false,
-    days: (week as any).getDays().map((d: JustDay) => buildDayProps(dateEx, d)),
+    days: (week as any).getDays().map((d: JustDay) => buildDayProps(dateEx, d, selectedDay, dayHoverLabel)),
 })
 
-const buildMonthProps = (dateEx: DateEx | undefined, month: JustMonth): MonthProps => ({
+const buildMonthProps = (
+    dateEx: DateEx | undefined,
+    month: JustMonth,
+    selectedDay?: JustDay,
+    dayHoverLabel?: (day: JustDay) => string | null,
+): MonthProps => ({
     value: month,
     isMatch: dateEx?.isMatch(month) ?? false,
     isContained: dateEx?.contains(month) ?? false,
-    weeks: (month as any).getWeeks().map((w: JustWeek) => buildWeekProps(dateEx, w)),
+    weeks: (month as any).getWeeks().map((w: JustWeek) => buildWeekProps(dateEx, w, selectedDay, dayHoverLabel)),
 })
 
-const buildQuarterProps = (dateEx: DateEx | undefined, quarter: JustQuarter): QuarterProps => ({
+const buildQuarterProps = (
+    dateEx: DateEx | undefined,
+    quarter: JustQuarter,
+    selectedDay?: JustDay,
+    dayHoverLabel?: (day: JustDay) => string | null,
+): QuarterProps => ({
     value: quarter,
     isMatch: dateEx?.isMatch(quarter) ?? false,
     isContained: dateEx?.contains(quarter) ?? false,
-    months: (quarter as any).getMonths().map((m: JustMonth) => buildMonthProps(dateEx, m)),
+    months: (quarter as any).getMonths().map((m: JustMonth) => buildMonthProps(dateEx, m, selectedDay, dayHoverLabel)),
 })
 
-const buildProps = (dateEx: DateEx | undefined, yearNum: number): YearProps => {
+const buildProps = (
+    dateEx: DateEx | undefined,
+    yearNum: number,
+    selectedDay?: JustDay,
+    dayHoverLabel?: (day: JustDay) => string | null,
+): YearProps => {
     const year = new JustYear(yearNum);
     return {
         value: year,
         isMatch: dateEx?.isMatch(year) ?? false,
         isContained: dateEx?.contains(year) ?? false,
-        quarters: (year as any).getQuarters().map((q: JustQuarter) => buildQuarterProps(dateEx, q)),
+        quarters: (year as any).getQuarters().map((q: JustQuarter) => buildQuarterProps(dateEx, q, selectedDay, dayHoverLabel)),
     };
 }
 
@@ -79,17 +108,21 @@ const baseBox = 'border rounded-md flex items-center justify-center font-["Inter
 const containedClass = " bg-[#eeeeee] text-[#2D4059] font-bold"
 const matchClass = " bg-[#BBD5DA] border-[#087E8B] text-[#2D4059] font-bold "
 const currentClass = " border-[#FF0000] text-[#FF0000]"
+const selectedClass = " ring-2 ring-[#F07B3F]/70 border-[#F07B3F]"
 
 
-const DayCell: FC<DayProps> = ({ value, isMatch, isContained }) => {
+const DayCell: FC<DayProps> = ({ value, isMatch, isContained, isSelected, hoverLabel }) => {
     const isCurrent = value.isCurrent()
     const label = value.castToMonthDay().dayOfMonth
 
-    let cls = `${baseBox} w-full h-full min-h-6 aspect-square text-[10px] tabular-nums`
+    let cls = `${baseBox} group relative w-full h-full min-h-6 aspect-square text-[10px] tabular-nums`
     if (isMatch) {
         cls += matchClass
     } else if (isContained) {
         cls += containedClass
+    }
+    if (isSelected) {
+        cls += selectedClass
     }
     if (isCurrent) {
         cls += currentClass
@@ -98,6 +131,11 @@ const DayCell: FC<DayProps> = ({ value, isMatch, isContained }) => {
     return (
         <div className={cls} title={value.castToMonthDay().dayOfMonth.toString()}>
             {label}
+            {hoverLabel && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-[#BBD5DA] bg-white px-2 py-1 font-mono text-[10px] font-semibold text-[#2D4059] shadow-lg group-hover:block">
+                    {hoverLabel}
+                </div>
+            )}
         </div>
     )
 }
@@ -202,10 +240,12 @@ interface Props {
     year: number
     onYearChange: (y: number) => void
     dateEx?: DateEx
+    selectedDay?: JustDay
+    dayHoverLabel?: (day: JustDay) => string | null
 }
 
-export const CalendarView: FC<Props> = ({ year, onYearChange, dateEx }) => {
-    const yearProps = buildProps(dateEx, year)
+export const CalendarView: FC<Props> = ({ year, onYearChange, dateEx, selectedDay, dayHoverLabel }) => {
+    const yearProps = buildProps(dateEx, year, selectedDay, dayHoverLabel)
     const isCurrentYear = yearProps.value.isCurrent()
 
 

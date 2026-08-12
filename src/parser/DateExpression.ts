@@ -282,8 +282,9 @@ function selectorToCycleIndexes(term: DateExTerm, parent: JustDateType): number[
 
   switch (term.selector.type) {
     case "wildcard":
-    case "current":
       return []
+    case "current":
+      return [currentValue(unit)]
     case "scalar":
       return [term.selector.n]
     case "ref":
