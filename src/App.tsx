@@ -107,7 +107,7 @@ export const App: FC = () => {
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-xs font-medium tracking-widest uppercase text-[#F07B3F]">Date Expression Language</p>
           <a
-            href="./extended"
+            href={`${import.meta.env.BASE_URL}extended`}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#EA5455] underline decoration-[#EA5455]/30 underline-offset-4 hover:text-[#FF0000]"
           >
             Check Extended Version

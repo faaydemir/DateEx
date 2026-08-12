@@ -12,6 +12,7 @@
     "pretest": "npm run build:grammar",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "build": "vite build",
+    "postbuild": "node scripts/prepare-pages.cjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --project tsconfig.scripts.json --noEmit"
   },

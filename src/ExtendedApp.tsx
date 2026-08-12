@@ -153,7 +153,7 @@ export const ExtendedApp: FC = () => {
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <p className="text-xs font-medium uppercase tracking-widest text-[#F07B3F]">Experimental - Date and Time Expression Language</p>
           <a
-            href="./"
+            href={import.meta.env.BASE_URL}
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#EA5455] underline decoration-[#EA5455]/30 underline-offset-4 hover:text-[#FF0000]"
           >
             Check Standart Version
