@@ -4,7 +4,8 @@ import './index.css'
 import App from './App.tsx'
 import ExtendedApp from './ExtendedApp.tsx'
 
-const RootApp = window.location.pathname.endsWith('/extended') ? ExtendedApp : App
+const pathname = window.location.pathname.replace(/\/+$/, '')
+const RootApp = pathname.endsWith('/extended') ? ExtendedApp : App
 
 const rootElement = document.getElementById('root')
 
